@@ -112,22 +112,4 @@ public:
     }
 };
 
-// Sample main function for testing
-int main() {
-    HashTable ht(7);
-    
-    ht.printTable(); // Initial empty table
-    ht.insert(1);
-    ht.printTable();
-    ht.insert(1); // Attempting to insert duplicate
-    ht.insert(4);
-    ht.printTable();
-    ht.remove(5); // Attempting to remove non-existent element
-    ht.remove(1);
-    ht.printTable();
-    ht.insert(2);
-    ht.insert(17);
-    ht.printTable(); // Final state of the table
-    
-    return 0;
-}
+
