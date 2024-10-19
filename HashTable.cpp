@@ -141,19 +141,19 @@ public:
     }
 };
 
-// Example main program
+// Example for testing 
 int main() {
-    HashTable ht(7);  // Start with table size 7
+    HashTable ht(7);  
     
     ht.insert(2);
     ht.insert(17);
-    ht.printTable();  // Expected output: "- - - 2 - 17 - "
+    ht.printTable();  
 
     ht.insert(19);
-    ht.printTable();  // Resizing might occur depending on the threshold
+    ht.printTable();  
 
     ht.remove(17);
-    ht.printTable();  // Expected output: "- - - 2 - - - "
+    ht.printTable(); 
 
     int index = ht.search(2);
     cout << "Index of 2: " << index << endl;
