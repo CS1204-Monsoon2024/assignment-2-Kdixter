@@ -8,7 +8,7 @@ private:
     int m;                // Current size of the table
     int count;            // Number of elements in the table
     const double loadFactorThreshold = 0.8;  // Load factor threshold
-    const int primeSize[] = {7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}; // List of prime numbers
+    static const int primeSize[12]; // List of prime numbers
 
     // Hash function
     int hash(int key) {
@@ -44,6 +44,9 @@ private:
     }
 
 public:
+    // Initialize the static array
+    static const int primeSize[12];
+
     // Constructor
     HashTable(int size) {
         m = getNextPrimeSize(size); // Ensure initial size is prime
@@ -118,6 +121,9 @@ public:
         std::cout << std::endl; // Print new line at the end
     }
 };
+
+// Definition of the static prime size array
+const int HashTable::primeSize[12] = {7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}; 
 
 int main() {
     HashTable ht(7); // Initialize hash table with size 7
