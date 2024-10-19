@@ -1,137 +1,139 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 class HashTable {
 private:
-    std::vector<int> table; // Stores the keys
-    std::vector<bool> occupied; // To check if a slot is occupied
-    int currentSize; // Number of elements in the hash table
-    int tableSize; // Current size of the table
-
-    // Prime numbers to use for resizing
-    const int primes[9] = {7, 13, 19, 31, 61, 127, 251, 509, 1021};
-
-    // Function to get the next prime number greater than the current size
-    int getNextPrime(int size) {
-        for (int prime : primes) {
-            if (prime > size) {
-                return prime;
-            }
-        }
-        return size * 2 + 1; // Fallback if we exceed known primes
-    }
+    int* table;           // Pointer to the hash table
+    int m;                // Current size of the table
+    int count;            // Number of elements in the table
+    const double loadFactorThreshold = 0.8;  // Load factor threshold
+    const int primeSize[] = {7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}; // List of prime numbers
 
     // Hash function
     int hash(int key) {
-        return key % tableSize;
+        return key % m;
     }
 
-    // Resize the hash table
-    void resize() {
-        int newSize = getNextPrime(tableSize * 2);
-        std::vector<int> newTable(newSize, -1);
-        std::vector<bool> newOccupied(newSize, false);
-        
-        // Rehash all existing elements
-        for (int i = 0; i < tableSize; ++i) {
-            if (occupied[i]) {
-                insertIntoNewTable(newTable, newOccupied, table[i]);
+    // Function to find the next prime size for resizing
+    int getNextPrimeSize(int currentSize) {
+        for (int prime : primeSize) {
+            if (prime > currentSize) {
+                return prime;
             }
         }
-        
-        // Replace old table with new table
-        table = std::move(newTable);
-        occupied = std::move(newOccupied);
-        tableSize = newSize;
+        return currentSize; // Return current size if no prime is found (unlikely)
     }
 
-    // Helper function to insert into the new table during resize
-    void insertIntoNewTable(std::vector<int>& newTable, std::vector<bool>& newOccupied, int key) {
-        int index = hash(key);
-        int i = 0;
-        while (newOccupied[index]) {
-            index = (index + i * i) % newTable.size();
-            ++i;
+    // Resize the table
+    void resize() {
+        int newSize = getNextPrimeSize(m * 2);
+        int* newTable = new int[newSize];
+        std::fill(newTable, newTable + newSize, -1); // Initialize new table with -1
+
+        // Rehash all keys into the new table
+        for (int i = 0; i < m; i++) {
+            if (table[i] != -1) {
+                insert(table[i]);
+            }
         }
-        newTable[index] = key;
-        newOccupied[index] = true;
+
+        delete[] table; // Delete old table
+        table = newTable; // Point to new table
+        m = newSize; // Update current size
     }
 
 public:
-    HashTable(int size = 7) : tableSize(size), currentSize(0) {
-        table.resize(size, -1);
-        occupied.resize(size, false);
+    // Constructor
+    HashTable(int size) {
+        m = getNextPrimeSize(size); // Ensure initial size is prime
+        table = new int[m];
+        std::fill(table, table + m, -1); // Initialize table with -1
+        count = 0; // Initialize element count
     }
 
-    // Insert a key into the hash table
+    // Destructor
+    ~HashTable() {
+        delete[] table; // Free allocated memory
+    }
+
+    // Insert function
     void insert(int key) {
-        if (currentSize >= tableSize * 0.8) {
-            resize();
+        if ((double)count / m >= loadFactorThreshold) {
+            resize(); // Resize if load factor exceeds threshold
         }
 
-        int index = hash(key);
+        int idx = hash(key);
         int i = 0;
-        while (occupied[index]) {
-            index = (index + i * i) % tableSize;
-            ++i;
+
+        // Quadratic probing to find the next available slot
+        while (table[(idx + i * i) % m] != -1) {
+            i++;
         }
-        table[index] = key;
-        occupied[index] = true;
-        ++currentSize;
+        
+        table[(idx + i * i) % m] = key; // Insert the key
+        count++; // Increment element count
     }
 
-    // Search for a key and return its index
-    int search(int key) {
-        int index = hash(key);
+    // Remove function
+    void remove(int key) {
+        int idx = hash(key);
         int i = 0;
 
-        while (occupied[index]) {
-            if (table[index] == key) {
-                return index; // Key found
+        // Quadratic probing to find the key
+        while (table[(idx + i * i) % m] != -1) {
+            if (table[(idx + i * i) % m] == key) {
+                table[(idx + i * i) % m] = -1; // Mark as deleted
+                count--; // Decrement element count
+                return;
             }
-            index = (index + i * i) % tableSize;
-            ++i;
+            i++;
+        }
+    }
+
+    // Search function
+    int search(int key) {
+        int idx = hash(key);
+        int i = 0;
+
+        // Quadratic probing to find the key
+        while (table[(idx + i * i) % m] != -1) {
+            if (table[(idx + i * i) % m] == key) {
+                return (idx + i * i) % m; // Return the index
+            }
+            i++;
         }
         return -1; // Key not found
     }
 
-    // Remove a key from the hash table
-    void remove(int key) {
-        int index = search(key);
-        if (index != -1) {
-            occupied[index] = false; // Mark as deleted
-            currentSize--;
-        }
-    }
-
     // Print the hash table
     void printTable() {
-        for (int i = 0; i < tableSize; ++i) {
-            if (occupied[i]) {
+        for (int i = 0; i < m; i++) {
+            if (table[i] != -1) {
                 std::cout << table[i] << " ";
             } else {
                 std::cout << "- ";
             }
         }
-        std::cout << std::endl; // Print a newline at the end
+        std::cout << std::endl; // Print new line at the end
     }
 };
 
 int main() {
-    HashTable ht;
+    HashTable ht(7); // Initialize hash table with size 7
 
     ht.insert(2);
     ht.insert(17);
-    ht.insert(23);
-    ht.insert(14);
+    ht.insert(15);
+    ht.insert(8);
     
-    ht.printTable(); // Example output: - - - 2 - - 17 -
+    ht.printTable(); // Print the current table
 
-    std::cout << "Index of 17: " << ht.search(17) << std::endl; // Output the index
-    std::cout << "Index of 100: " << ht.search(100) << std::endl; // Not found example
-
-    ht.remove(17);
-    ht.printTable(); // Should not contain 17 anymore
+    std::cout << "Index of 17: " << ht.search(17) << std::endl; // Search for key 17
+    ht.remove(17); // Remove key 17
+    std::cout << "Index of 17 after removal: " << ht.search(17) << std::endl; // Search for key 17 after removal
+    
+    ht.printTable(); // Print the table after deletion
 
     return 0;
 }
