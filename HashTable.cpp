@@ -3,7 +3,7 @@
 
 using namespace std;
 
-// Helper function to check if a number is prime
+// Function for primality
 bool isPrime(int n) {
     if (n <= 1) return false;
     if (n == 2 || n == 3) return true;
@@ -27,19 +27,19 @@ private:
     vector<int> table;   // Vector to represent the hash table
     int tableSize;       // Size of the hash table
     int numElements;     // Number of elements currently in the table
-    const double threshold = 0.8; // Load factor threshold
+    const double threshold = 0.8; // Load factor
 
-    // Helper function for hashing
+    // Hashing function
     int hash(int key) {
         return key % tableSize;
     }
 
-    // Function to resize the table when threshold is exceeded
+    // Resizing function
     void resizeTable() {
         int newSize = nextPrime(tableSize * 2);  // Resize to at least double the previous size, and a prime number
         vector<int> newTable(newSize, -1);
         
-        // Rehash existing elements
+        // Rehash existing elements once resized
         for (int i = 0; i < tableSize; i++) {
             if (table[i] != -1) {
                 int newIndex = table[i] % newSize;
@@ -58,7 +58,7 @@ public:
     // Constructor
     HashTable(int size) {
         tableSize = nextPrime(size);  // Initial size should be a prime number
-        table.resize(tableSize, -1);  // Initialize table with -1 representing empty slots
+        table.resize(tableSize, -1);  // Initialize table with -1 representing empty slots (NULL)
         numElements = 0;
     }
 
@@ -71,7 +71,7 @@ public:
         int index = hash(key);
         int j = 0;
         
-        // Handle duplicate insertion
+        // duplicate insertion
         for (int i = 0; i < tableSize; i++) {
             int probedIndex = (index + j * j) % tableSize;
             if (table[probedIndex] == key) {
@@ -128,7 +128,7 @@ public:
         return -1; // Not found
     }
 
-    // Print the hash table
+    // Printing the hash table
     void printTable() {
         for (int i = 0; i < tableSize; i++) {
             if (table[i] == -1) {
@@ -140,23 +140,3 @@ public:
         cout << endl;
     }
 };
-
-// Example main program
-int main() {
-    HashTable ht(7);  // Start with table size 7
-    
-    ht.insert(2);
-    ht.insert(17);
-    ht.printTable();  // Expected output: "- - - 2 - 17 - "
-
-    ht.insert(19);
-    ht.printTable();  // Resizing might occur depending on the threshold
-
-    ht.remove(17);
-    ht.printTable();  // Expected output: "- - - 2 - - - "
-
-    int index = ht.search(2);
-    cout << "Index of 2: " << index << endl;
-
-    return 0;
-}
