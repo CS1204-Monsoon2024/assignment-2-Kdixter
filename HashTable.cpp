@@ -1,144 +1,102 @@
-#include <iostream>
-#include <vector>
-
-using namespace std;
-
-// Helper function to check if a number is prime
-bool isPrime(int n) {
-    if (n <= 1) return false;
-    if (n == 2 || n == 3) return true;
-    if (n % 2 == 0 || n % 3 == 0) return false;
-    for (int i = 5; i * i <= n; i += 6) {
-        if (n % i == 0 || n % (i + 2) == 0) return false;
-    }
-    return true;
-}
-
-// Function to find the next prime number greater than or equal to a given number
-int nextPrime(int n) {
-    while (!isPrime(n)) {
-        n++;
-    }
-    return n;
-}
-
-class HashTable {
-private:
-    vector<int> table;   // Vector to represent the hash table
-    int tableSize;       // Size of the hash table
-    int numElements;     // Number of elements currently in the table
-    const double threshold = 0.8; // Load factor threshold
-
-    // Helper function for hashing
-    int hash(int key) {
-        return key % tableSize;
-    }
-
-    // Function to resize the table when threshold is exceeded
-    void resizeTable() {
-        int newSize = nextPrime(tableSize * 2);  // Resize to at least double the previous size, and a prime number
-        vector<int> newTable(newSize, -1);
-        
-        // Rehash existing elements
-        for (int i = 0; i < tableSize; i++) {
-            if (table[i] != -1) {
-                int newIndex = table[i] % newSize;
-                int j = 0;
-                while (newTable[(newIndex + j * j) % newSize] != -1) {
-                    j++;
-                }
-                newTable[(newIndex + j * j) % newSize] = table[i];
-            }
-        }
-        table = newTable;
-        tableSize = newSize;
-    }
-
-public:
-    // Constructor
-    HashTable(int size) {
-        tableSize = nextPrime(size);  // Initial size should be a prime number
-        table.resize(tableSize, -1);  // Initialize table with -1 representing empty slots
-        numElements = 0;
-    }
-
-    // Insert function
-    void insert(int key) {
-        if ((double)numElements / tableSize >= threshold) {
-            resizeTable();
-        }
-
-        int index = hash(key);
-        int j = 0;
-        
-        // Handle duplicate insertion
-        for (int i = 0; i < tableSize; i++) {
-            int probedIndex = (index + j * j) % tableSize;
-            if (table[probedIndex] == key) {
-                cout << "Duplicate key insertion is not allowed" << endl;
-                return;
-            }
-            if (table[probedIndex] == -1) break;
-            j++;
-        }
-
-        j = 0;
-        while (j < tableSize) {
-            int probedIndex = (index + j * j) % tableSize;
-            if (table[probedIndex] == -1) {
-                table[probedIndex] = key;
-                numElements++;
-                return;
-            }
-            j++;
-        }
-        
-        cout << "Max probing limit reached!" << endl;
-    }
-
-    // Remove function
-    void remove(int key) {
-        int index = hash(key);
-        int j = 0;
-        while (j < tableSize) {
-            int probedIndex = (index + j * j) % tableSize;
-            if (table[probedIndex] == key) {
-                table[probedIndex] = -1; // Mark the slot as empty
-                numElements--;
-                return;
-            }
-            if (table[probedIndex] == -1) break; // Stop if an empty slot is found
-            j++;
-        }
-        cout << "Element not found" << endl;
-    }
-
-    // Search function
-    int search(int key) {
-        int index = hash(key);
-        int j = 0;
-        while (j < tableSize) {
-            int probedIndex = (index + j * j) % tableSize;
-            if (table[probedIndex] == key) {
-                return probedIndex;
-            }
-            if (table[probedIndex] == -1) break; // Stop if an empty slot is found
-            j++;
-        }
-        return -1; // Not found
-    }
-
-    // Print the hash table
-    void printTable() {
-        for (int i = 0; i < tableSize; i++) {
-            if (table[i] == -1) {
-                cout << "- ";
-            } else {
-                cout << table[i] << " ";
-            }
-        }
-        cout << endl;
-    }
+#include <iostream>  
+#include <vector>  
+  
+class HashTable {  
+private:  
+   int size;  
+   int threshold;  
+   std::vector<int> table;  
+  
+   // Helper function to check if a number is prime  
+   bool isPrime(int num) {  
+      if (num <= 1) return false;  
+      for (int i = 2; i * i <= num; i++) {  
+        if (num % i == 0) return false;  
+      }  
+      return true;  
+   }  
+  
+   // Helper function to find the next prime number  
+   int nextPrime(int num) {  
+      while (!isPrime(num)) {  
+        num++;  
+      }  
+      return num;  
+   }  
+  
+   // Helper function to resize the table  
+   void resize() {  
+      int newSize = nextPrime(size * 2);  
+      std::vector<int> newTable(newSize, -1);  
+      for (int i = 0; i < size; i++) {  
+        if (table[i] != -1) {  
+           int index = table[i] % newSize;  
+           while (newTable[index] != -1) {  
+              index = (index + 1) % newSize;  
+           }  
+           newTable[index] = table[i];  
+        }  
+      }  
+      size = newSize;  
+      table = newTable;  
+   }  
+  
+public:  
+   // Constructor  
+   HashTable(int initialSize) : size(initialSize), threshold(0.8 * initialSize), table(initialSize, -1) {}  
+  
+   // Insert a value into the table  
+   void insert(int value) {  
+      if (search(value) != -1) {  
+        std::cout << "Duplicate key insertion is not allowed" << std::endl;  
+        return;  
+      }  
+      int index = value % size;  
+      int probingLimit = 0;  
+      while (table[index] != -1 && probingLimit < size) {  
+        index = (index + 1) % size;  
+        probingLimit++;  
+      }  
+      if (probingLimit == size) {  
+        std::cout << "Max probing limit reached!" << std::endl;  
+        return;  
+      }  
+      table[index] = value;  
+      if ((double)++threshold / size >= 0.8) {  
+        resize();  
+      }  
+   }  
+  
+   // Remove a value from the table  
+   void remove(int value) {  
+      int index = search(value);  
+      if (index == -1) {  
+        std::cout << "Element not found" << std::endl;  
+        return;  
+      }  
+      table[index] = -1;  
+   }  
+  
+   // Search for a value in the table  
+   int search(int value) {  
+      int index = value % size;  
+      int probingLimit = 0;  
+      while (table[index] != value && probingLimit < size) {  
+        index = (index + 1) % size;  
+        probingLimit++;  
+      }  
+      return probingLimit == size ? -1 : index;  
+   }  
+  
+   // Print the table  
+   void printTable() {  
+      for (int i = 0; i < size; i++) {  
+        if (table[i] == -1) {  
+           std::cout << "- ";  
+        } else {  
+           std::cout << table[i] << " ";  
+        }  
+      }  
+      std::cout << std::endl;  
+   }  
 };
-
-
