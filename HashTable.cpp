@@ -1,133 +1,137 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
-
 using namespace std;
 
 class HashTable {
 private:
     vector<int> table;
     int currentSize;
-    int threshold;
     int numElements;
-
-    // Helper function to find next prime number
-    bool isPrime(int n) {
-        if (n <= 1) return false;
-        if (n == 2 || n == 3) return true;
-        if (n % 2 == 0 || n % 3 == 0) return false;
-        for (int i = 5; i * i <= n; i += 6) {
-            if (n % i == 0 || n % (i + 2) == 0) return false;
+    const int EMPTY = -1;
+    const double LOAD_FACTOR_THRESHOLD = 0.8;
+    
+    // Helper function to check if a number is prime
+    bool isPrime(int num) {
+        if (num <= 1) return false;
+        if (num == 2 || num == 3) return true;
+        if (num % 2 == 0 || num % 3 == 0) return false;
+        for (int i = 5; i * i <= num; i += 6) {
+            if (num % i == 0 || num % (i + 2) == 0)
+                return false;
         }
         return true;
     }
 
-    // Helper function to resize the hash table
-    void resizeTable() {
-        int newSize = currentSize * 2;
-        while (!isPrime(newSize)) {
-            newSize++;
+    // Helper function to find the next prime number
+    int nextPrime(int n) {
+        while (!isPrime(n)) {
+            n++;
         }
-
-        vector<int> oldTable = table;
-        table.clear();
-        table.resize(newSize, -1);
-        currentSize = newSize;
-        numElements = 0;
-
-        for (int value : oldTable) {
-            if (value != -1) {
-                insert(value);
-            }
-        }
+        return n;
     }
 
-    // Hash function (key mod size of the table)
+    // Hash function
     int hashFunction(int key) {
         return key % currentSize;
     }
 
+    // Resize function to rehash the table when threshold is exceeded
+    void resize() {
+        int newSize = nextPrime(currentSize * 2);
+        vector<int> newTable(newSize, EMPTY);
+
+        // Rehash all elements in the new table
+        for (int i = 0; i < currentSize; i++) {
+            if (table[i] != EMPTY) {
+                int newHash = table[i] % newSize;
+                int j = 0;
+                while (newTable[(newHash + j * j) % newSize] != EMPTY) {
+                    j++;
+                }
+                newTable[(newHash + j * j) % newSize] = table[i];
+            }
+        }
+
+        table = newTable;
+        currentSize = newSize;
+    }
+
 public:
-    // Constructor
-    HashTable(int size = 5) {
-        currentSize = size;
-        table.resize(currentSize, -1);
-        threshold = currentSize / 2; // Resize when table is half full
+    // Constructor to initialize the hash table with a given size
+    HashTable(int size) {
+        currentSize = nextPrime(size);
+        table.resize(currentSize, EMPTY);
         numElements = 0;
     }
 
-    // Insert function
+    // Insert function with quadratic probing
     void insert(int key) {
-        if (numElements >= threshold) {
-            resizeTable();
+        if (numElements >= LOAD_FACTOR_THRESHOLD * currentSize) {
+            resize();
         }
 
-        int index = hashFunction(key);
-        int originalIndex = index;
+        int hash = hashFunction(key);
         int i = 0;
 
-        while (table[index] != -1) {
-            if (table[index] == key) {
+        while (table[(hash + i * i) % currentSize] != EMPTY) {
+            if (table[(hash + i * i) % currentSize] == key) {
                 cout << "Duplicate key insertion is not allowed" << endl;
                 return;
             }
             i++;
-            index = (originalIndex + i * i) % currentSize;  // Quadratic probing
-            if (i > currentSize) {
+            if (i >= currentSize) {
                 cout << "Max probing limit reached!" << endl;
                 return;
             }
         }
 
-        table[index] = key;
+        table[(hash + i * i) % currentSize] = key;
         numElements++;
     }
 
-    // Remove function
+    // Remove function with quadratic probing
     void remove(int key) {
-        int index = hashFunction(key);
-        int originalIndex = index;
+        int hash = hashFunction(key);
         int i = 0;
 
-        while (table[index] != -1) {
-            if (table[index] == key) {
-                table[index] = -1;
+        while (table[(hash + i * i) % currentSize] != EMPTY) {
+            if (table[(hash + i * i) % currentSize] == key) {
+                table[(hash + i * i) % currentSize] = EMPTY;
                 numElements--;
                 return;
             }
             i++;
-            index = (originalIndex + i * i) % currentSize;
-            if (i > currentSize) {
+            if (i >= currentSize) {
                 cout << "Element not found" << endl;
                 return;
             }
         }
+
         cout << "Element not found" << endl;
     }
 
-    // Search function
+    // Search function to return the index of the key
     int search(int key) {
-        int index = hashFunction(key);
-        int originalIndex = index;
+        int hash = hashFunction(key);
         int i = 0;
 
-        while (table[index] != -1) {
-            if (table[index] == key) {
-                return index;
+        while (table[(hash + i * i) % currentSize] != EMPTY) {
+            if (table[(hash + i * i) % currentSize] == key) {
+                return (hash + i * i) % currentSize;
             }
             i++;
-            index = (originalIndex + i * i) % currentSize;
-            if (i > currentSize) {
-                return -1;
+            if (i >= currentSize) {
+                return -1;  // Key not found
             }
         }
-        return -1;
+
+        return -1;  // Key not found
     }
 
-    // Print table function
+    // Print function to display the current state of the hash table
     void printTable() {
         for (int i = 0; i < currentSize; i++) {
-            if (table[i] == -1) {
+            if (table[i] == EMPTY) {
                 cout << "- ";
             } else {
                 cout << table[i] << " ";
@@ -136,5 +140,4 @@ public:
         cout << endl;
     }
 };
-
 
