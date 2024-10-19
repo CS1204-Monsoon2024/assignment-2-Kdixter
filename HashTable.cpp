@@ -140,3 +140,23 @@ public:
         cout << endl;
     }
 };
+
+// Example main program
+int main() {
+    HashTable ht(7);  // Start with table size 7
+    
+    ht.insert(2);
+    ht.insert(17);
+    ht.printTable();  // Expected output: "- - - 2 - 17 - "
+
+    ht.insert(19);
+    ht.printTable();  // Resizing might occur depending on the threshold
+
+    ht.remove(17);
+    ht.printTable();  // Expected output: "- - - 2 - - - "
+
+    int index = ht.search(2);
+    cout << "Index of 2: " << index << endl;
+
+    return 0;
+}
