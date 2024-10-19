@@ -46,11 +46,6 @@ public:
     }
 
     void insert(int key) {
-        if (search(key) != -1) {
-            std::cout << "Duplicate key insertion is not allowed" << std::endl;
-            return;
-        }
-
         if (count >= size / 2) {
             resize();
         }
