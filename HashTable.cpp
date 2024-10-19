@@ -137,22 +137,4 @@ public:
     }
 };
 
-// Sample main.cpp
-int main() {
-    HashTable ht(5);
 
-    ht.printTable();  // Initial empty table
-
-    ht.insert(1);
-    ht.printTable();
-
-    ht.insert(4);
-    ht.printTable();
-
-    ht.remove(2);  // Element not found
-    ht.insert(1);  // Duplicate key insertion
-    ht.insert(2);
-    ht.printTable();
-
-    return 0;
-}
