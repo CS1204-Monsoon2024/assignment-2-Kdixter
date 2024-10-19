@@ -4,142 +4,130 @@
 
 class HashTable {
 private:
-    int* table;           // Pointer to the hash table
-    int m;                // Current size of the table
-    int count;            // Number of elements in the table
-    const double loadFactorThreshold = 0.8;  // Load factor threshold
-    static const int primeSize[12]; // List of prime numbers
+    std::vector<int> table;
+    int size;
+    int count;
 
-    // Hash function
-    int hash(int key) {
-        return key % m;
+    int hashFunction(int key) {
+        return key % size;
     }
 
-    // Function to find the next prime size for resizing
-    int getNextPrimeSize(int currentSize) {
-        for (int prime : primeSize) {
-            if (prime > currentSize) {
-                return prime;
-            }
+    bool isPrime(int num) {
+        if (num <= 1) return false;
+        for (int i = 2; i <= std::sqrt(num); i++) {
+            if (num % i == 0) return false;
         }
-        return currentSize; // Return current size if no prime is found (unlikely)
+        return true;
     }
 
-    // Resize the table
+    int nextPrime(int num) {
+        while (!isPrime(num)) {
+            num++;
+        }
+        return num;
+    }
+
     void resize() {
-        int newSize = getNextPrimeSize(m * 2);
-        int* newTable = new int[newSize];
-        std::fill(newTable, newTable + newSize, -1); // Initialize new table with -1
-
-        // Rehash all keys into the new table
-        for (int i = 0; i < m; i++) {
+        int oldSize = size;
+        size = nextPrime(2 * size);
+        std::vector<int> newTable(size, -1);
+        
+        for (int i = 0; i < oldSize; i++) {
             if (table[i] != -1) {
-                insert(table[i]);
+                insert(table[i]); // Re-insert the elements
             }
         }
-
-        delete[] table; // Delete old table
-        table = newTable; // Point to new table
-        m = newSize; // Update current size
+        table.swap(newTable);
     }
 
 public:
-    // Initialize the static array
-    static const int primeSize[12];
-
-    // Constructor
-    HashTable(int size) {
-        m = getNextPrimeSize(size); // Ensure initial size is prime
-        table = new int[m];
-        std::fill(table, table + m, -1); // Initialize table with -1
-        count = 0; // Initialize element count
+    HashTable(int initialSize) : size(nextPrime(initialSize)), count(0) {
+        table.resize(size, -1);
     }
 
-    // Destructor
-    ~HashTable() {
-        delete[] table; // Free allocated memory
-    }
-
-    // Insert function
     void insert(int key) {
-        if ((double)count / m >= loadFactorThreshold) {
-            resize(); // Resize if load factor exceeds threshold
+        if (search(key) != -1) {
+            std::cout << "Duplicate key insertion is not allowed" << std::endl;
+            return;
         }
 
-        int idx = hash(key);
-        int i = 0;
+        if (count >= size / 2) {
+            resize();
+        }
 
-        // Quadratic probing to find the next available slot
-        while (table[(idx + i * i) % m] != -1) {
-            i++;
+        int index = hashFunction(key);
+        int probingLimit = 0;
+        
+        while (probingLimit < size) {
+            if (table[index] == -1) { // Empty slot found
+                table[index] = key;
+                count++;
+                return;
+            } else {
+                probingLimit++;
+                index = (index + probingLimit * probingLimit) % size; // Quadratic probing
+            }
         }
         
-        table[(idx + i * i) % m] = key; // Insert the key
-        count++; // Increment element count
+        std::cout << "Max probing limit reached!" << std::endl;
     }
 
-    // Remove function
     void remove(int key) {
-        int idx = hash(key);
-        int i = 0;
-
-        // Quadratic probing to find the key
-        while (table[(idx + i * i) % m] != -1) {
-            if (table[(idx + i * i) % m] == key) {
-                table[(idx + i * i) % m] = -1; // Mark as deleted
-                count--; // Decrement element count
-                return;
-            }
-            i++;
+        int index = search(key);
+        if (index == -1) {
+            std::cout << "Element not found" << std::endl;
+            return;
         }
+        table[index] = -1;
+        count--;
     }
 
-    // Search function
     int search(int key) {
-        int idx = hash(key);
-        int i = 0;
+        int index = hashFunction(key);
+        int probingLimit = 0;
 
-        // Quadratic probing to find the key
-        while (table[(idx + i * i) % m] != -1) {
-            if (table[(idx + i * i) % m] == key) {
-                return (idx + i * i) % m; // Return the index
+        while (probingLimit < size) {
+            if (table[index] == -1) {
+                return -1; // Key not found
+            } 
+            if (table[index] == key) {
+                return index; // Key found
             }
-            i++;
+            probingLimit++;
+            index = (index + probingLimit * probingLimit) % size; // Quadratic probing
         }
-        return -1; // Key not found
+
+        return -1; // Key not found after probing
     }
 
-    // Print the hash table
     void printTable() {
-        for (int i = 0; i < m; i++) {
-            if (table[i] != -1) {
-                std::cout << table[i] << " ";
-            } else {
+        for (int i = 0; i < size; i++) {
+            if (table[i] == -1) {
                 std::cout << "- ";
+            } else {
+                std::cout << table[i] << " ";
             }
         }
-        std::cout << std::endl; // Print new line at the end
+        std::cout << std::endl; // New line at the end
     }
 };
 
-// Definition of the static prime size array
-const int HashTable::primeSize[12] = {7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}; 
-
+// Sample main function for testing
 int main() {
-    HashTable ht(7); // Initialize hash table with size 7
-
+    HashTable ht(7);
+    
+    ht.printTable(); // Initial empty table
+    ht.insert(1);
+    ht.printTable();
+    ht.insert(1); // Attempting to insert duplicate
+    ht.insert(4);
+    ht.printTable();
+    ht.remove(5); // Attempting to remove non-existent element
+    ht.remove(1);
+    ht.printTable();
     ht.insert(2);
     ht.insert(17);
-    ht.insert(15);
-    ht.insert(8);
+    ht.printTable(); // Final state of the table
     
-    ht.printTable(); // Print the current table
-
-    std::cout << "Index of 17: " << ht.search(17) << std::endl; // Search for key 17
-    ht.remove(17); // Remove key 17
-    std::cout << "Index of 17 after removal: " << ht.search(17) << std::endl; // Search for key 17 after removal
-    
-    ht.printTable(); // Print the table after deletion
-
     return 0;
 }
